@@ -23,6 +23,7 @@ Per risolvere il problema si può usare il custom component [Spotcast](https://g
   - Copiare gli script python nella propria directory **/config/python_scripts**
   - Copiare il package **spotify.yaml** nella propria directory **/config/packages**
   - Nel proprio file **secret.yaml** configurare le entry **spotify_client_id** e **spotify_client_secret**
+  - Riavviare Home Assistant
 
 ## Configurazione
 
