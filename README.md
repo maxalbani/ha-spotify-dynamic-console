@@ -118,3 +118,100 @@ Riproduzione di una playlist rilassante a fine giornata
     palylist: 'A Fine Giornata'
 ```
 
+## View Lovelace
+
+Ognuno può crearsi la propria view su Lovelace utilizzando card e componenti preferiti.
+Di seguito un esempio di due vertical stack che utilizzano le seguenti card custom:
+
+  - [Button Card](https://github.com/custom-cards/button-card/)
+  - [Banner Card](https://github.com/nervetattoo/banner-card/)
+  - [Mini Media Player](https://github.com/kalkih/mini-media-player/)
+  
+### Info Riproduzione
+
+```yaml
+- type: vertical-stack
+cards:
+  - name: Info Riproduzione
+    template: header
+    type: 'custom:button-card'
+  - entity: sensor.spotify_source
+    icon: 'mdi:spotify'
+    name: In riproduzione su
+    type: sensor
+  - card:
+      cards:
+        - artwork: full-cover
+          entity: media_player.spotify
+          hide:
+            controls: true
+            icon: true
+            info: true
+            name: true
+            power: true
+            source: true
+            volume: true
+          type: 'custom:mini-media-player'
+        - background: var(--primary-color)
+          entities:
+            - entity: sensor.spotify_artist
+              name: Artista
+            - entity: sensor.spotify_title
+              name: Titolo
+          heading: false
+          row_size: 2
+          type: 'custom:banner-card'
+      type: vertical-stack
+    conditions:
+      - entity: media_player.spotify
+        state_not: idle
+    type: conditional
+```  
+
+### Controlli
+
+```yaml
+- type: vertical-stack
+cards:
+  - name: Controlli
+    template: header
+    type: 'custom:button-card'
+  - entity: media_player.spotify
+    hide:
+      info: true
+      power: true
+      shuffle: false
+    type: 'custom:mini-media-player'
+  - entities:
+      - entity: input_select.spotify_source
+      - entity: input_select.spotify_genre
+      - entity: input_select.spotify_playlist
+      - entity: input_boolean.spotify_shuffle
+    show_header_toggle: false
+    title: Riproduci una Playlist
+    type: entities
+  - cards:
+      - entity: script.spotify_play_playlist
+        icon: 'mdi:play'
+        name: Playlist Selezionata
+        styles:
+          card:
+            - height: 80px
+          name:
+            - margin-top: 5px
+        type: 'custom:button-card'
+      - entity: script.spotify_play_random_playlist
+        icon: 'mdi:shuffle'
+        name: Playlist Casuale
+        styles:
+          card:
+            - height: 80px
+          name:
+            - margin-top: 5px
+        type: 'custom:button-card'
+    type: horizontal-stack
+```  
+  
+  
+  
+
