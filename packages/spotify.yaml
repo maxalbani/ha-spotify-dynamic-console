@@ -1,0 +1,162 @@
+media_player:
+  - platform: spotify
+    client_id: !secret spotify_client_id
+    client_secret: !secret spotify_client_secret
+
+sensor:
+  - platform: template
+    sensors:
+        
+      spotify_shuffle:
+        friendly_name: "Spotify Shuffle"
+        value_template: "{{ states.media_player.spotify.attributes.shuffle }}"
+
+      spotify_source:
+        friendly_name: "Spotify Source"
+        value_template: >-
+          {% if is_state('media_player.spotify', 'playing') %}
+            {{ states.media_player.spotify.attributes.source }}
+          {% elif is_state('media_player.spotify', 'paused') %}
+            {{ states.media_player.spotify.attributes.source }} - Pausa
+          {% else %}
+            Inattivo
+          {% endif %}  
+
+      spotify_album:
+        value_template: '{{ states.media_player.spotify.attributes.media_album_name }}'
+        
+      spotify_artist:
+        value_template: '{{ states.media_player.spotify.attributes.media_artist }}'
+        
+      spotify_title:
+        value_template: '{{ states.media_player.spotify.attributes.media_title }}'
+        
+
+input_select:
+  spotify_playlist:
+    name: 'Playlist:'
+    options:
+      - Seleziona Playlist
+    initial: Seleziona Playlist
+    icon: mdi:spotify
+    
+  spotify_source:
+    name: 'Riproduci in:'
+    options:
+      - Seleziona Speaker
+    initial: Seleziona Speaker
+    icon: mdi:speaker-wireless
+    
+  spotify_genre:
+    name: 'Genere:'
+    options:
+      - Seleziona Genere
+    initial: Seleziona Genere
+    icon: mdi:music-note    
+      
+input_boolean:
+  spotify_shuffle:
+    name: Shuffle
+    icon: mdi:shuffle-variant
+
+script:
+  spotify_reset_list:
+    alias: "Resetta le liste dopo la riproduzione"
+    sequence:
+      - service: input_select.select_option
+        data:
+          entity_id: input_select.spotify_source
+          option: Seleziona Speaker
+      - service: input_select.select_option
+        data:
+          entity_id: input_select.spotify_genre
+          option: Seleziona Genere      
+      - service: input_select.select_option
+        data:
+          entity_id: input_select.spotify_playlist
+          option: Seleziona Playlist
+        
+  spotify_play_playlist:
+    alias: "Riproduci la playlist selezionata"
+    sequence:
+      - condition: template
+        value_template: '{{ states.input_select.spotify_source.state != "Seleziona Speaker" }}'    
+      - condition: template
+        value_template: '{{ states.input_select.spotify_playlist.state != "Seleziona Playlist" }}'    
+      - service: python_script.spotify_play
+        data_template:
+          source: '{{ states.input_select.spotify_source.state }}'
+          random: 'no'
+          playlist: '{{ states.input_select.spotify_playlist.state }}'
+      - service: script.spotify_reset_list
+      
+  spotify_play_random_playlist:
+    alias: "Riproduci una playlist random"
+    sequence:
+      - condition: template
+        value_template: '{{ states.input_select.spotify_source.state != "Seleziona Speaker" }}'
+      - condition: template
+        value_template: '{{ states.input_select.spotify_genre.state != "Seleziona Genere" }}'
+      - service: python_script.spotify_play
+        data_template:
+          source: '{{ states.input_select.spotify_source.state }}'
+          random: 'genre'
+          genre: '{{ states.input_select.spotify_genre.state }}'
+      - service: script.spotify_reset_list
+    
+automation:
+  - alias: Popola Input Playlist
+    trigger:
+    - platform: state
+      entity_id: input_select.spotify_genre
+    condition:
+      condition: template
+      value_template: '{{ states.input_select.spotify_genre.state != "Seleziona Genere"}}'
+    action:
+    - service: python_script.spotify_load_playlist
+      data_template:
+        entity_playlist: input_select.spotify_playlist
+        genre: "{{ trigger.to_state.state }}"
+
+  - alias: 'Spotify Shuffle (Set)'
+    trigger:
+      platform: state
+      entity_id: input_boolean.spotify_shuffle
+    action:
+      service: media_player.shuffle_set
+      data_template:
+        entity_id: media_player.spotify
+        shuffle: >
+          {% if is_state('input_boolean.spotify_shuffle', 'off') %} 
+          false
+          {% elif is_state('input_boolean.spotify_shuffle', 'on') %}
+          true
+          {% endif %}
+  
+  - alias: 'Spotify Shuffle (Sync)'
+    trigger:
+      - platform: homeassistant
+        event: start
+      - platform: state
+        entity_id: sensor.spotify_shuffle
+    action:
+      - delay:
+          seconds: 5
+      - service_template: >
+          {% if states.sensor.spotify_shuffle.state == 'False' %}
+            input_boolean.turn_off
+          {% else %}
+            input_boolean.turn_on
+          {% endif %}
+        data:
+          entity_id: input_boolean.spotify_shuffle
+          
+  - alias: 'Init Spotify Playlist'
+    trigger:
+      - platform: homeassistant
+        event: start
+    action:
+      - service: python_script.spotify_init
+        data:
+          entity_source: input_select.spotify_source
+          entity_genre: input_select.spotify_genre
