@@ -86,3 +86,35 @@ Parametri:
     - **all**: Avvia la riproduzione di una playlist casuale tra tutte quelle configurate
   - **genre**: Obbligatorio nel caso di **random=genre**
   - **playlist**: Obbligatorio nel caso di **random=no**
+  
+## Esempi
+
+Riproduzione delle ultime HITS durante la doccia
+
+```yaml
+- service: python_script.spotify_play
+  data:
+    source: 'Bagno'
+    random: 'genre'
+    genre: 'Hits'
+```
+
+Riproduzione di una playlist casuale in salotto
+
+```yaml
+- service: python_script.spotify_play
+  data:
+    source: 'Sala'
+    random: 'all'    
+```
+
+Riproduzione di una playlist rilassante a fine giornata
+
+```yaml
+- service: python_script.spotify_play
+  data:
+    source: 'Sala'
+    random: 'no'
+    palylist: 'A Fine Giornata'
+```
+
