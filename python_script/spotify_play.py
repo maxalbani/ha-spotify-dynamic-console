@@ -71,7 +71,6 @@ else:
         hass.services.call('media_player', 'select_source', service_data, True)
 
         # PLAY PLAYLIST
-        service_data = {'media_content_id': uri, 
-                        'random_song': 'true' }
-        hass.services.call('spotify', 'play_playlist', service_data, True)
         
+        service_data = {'media_content_id': uri, 'media_content_type' : 'playlist', 'entity_id' : media_player}
+        hass.services.call('media_player', 'play_media', service_data, True)
